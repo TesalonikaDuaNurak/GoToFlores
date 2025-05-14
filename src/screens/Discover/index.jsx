@@ -16,9 +16,9 @@ const DiscoverScreen = ({ navigation }) => {
   const [search, setSearch] = useState('');
 
   const destinations = [
-    { id: '1', name: 'Labuan Bajo', description: 'Gerbang menuju Pulau Komodo.', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQsZphlcuP1D8TfdeJMyogdkx1xlx2CbMD-8g&s' },
-    { id: '2', name: 'Pulau Komodo', description: 'Habitat asli Komodo.', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT-cGaMQLCKcKOlqO2xoqKWJ7dkMi2MqPU2VA&s' },
-    { id: '3', name: 'Wae Rebo', description: 'Desa tradisional di pegunungan.', image: 'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0d/a4/d3/41/the-most-of-i-like.jpg?w=1200&h=-1&s=1' },
+    { id: '4', name: 'Pantai Koka', description: 'Pantai pasir putih dengan dua teluk yang menawan.', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ3jS9hvS5z3TzYtsoGvTibBUca-ZQJmqq24g&s' },
+    { id: '5', name: 'Gunung Inerie', description: 'Gunung berapi yang menjulang megah di Flores bagian barat.', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSywmAZV2OVTBkSuN7UKybuOZ9uDBnsYTBk5A&s' },
+    { id: '6', name: 'Bena Village', description: 'Kampung adat megalitik dengan budaya yang masih terjaga kuat.', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSokHZ4JURCI_bwAEa74FZVr4cerwMVKPuqGQ&s' },
   ];
 
   const filteredDestinations = destinations.filter((item) =>

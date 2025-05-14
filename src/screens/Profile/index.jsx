@@ -12,8 +12,8 @@ import { colors, fontType } from '../../theme'; // Pastikan path sesuai
 
 const ProfileScreen = ({ navigation }) => {
   const profile = {
-    name: 'John Doe',
-    email: 'johndoe@example.com',
+    name: 'Tesalonika',
+    email: 'Tesalo@example.com',
     phone: '+62 812-3456-7890',
     location: 'Flores, NTT',
     bio: 'Pecinta traveling dan petualangan alam di Indonesia.',
