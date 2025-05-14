@@ -8,7 +8,8 @@ import {
   TouchableOpacity,
   FlatList,
 } from 'react-native';
-import { colors, fontType } from '../../theme'; // Pastikan path sesuai
+import * as Animatable from 'react-native-animatable';
+import { colors, fontType } from '../../theme';
 
 const ProfileScreen = ({ navigation }) => {
   const profile = {
@@ -35,14 +36,21 @@ const ProfileScreen = ({ navigation }) => {
     },
   ];
 
-  const renderPost = ({ item }) => (
-    <View style={styles.postCard}>
-      <Image source={{ uri: item.image }} style={styles.postImage} />
-      <View style={styles.postContent}>
-        <Text style={styles.postTitle}>{item.name}</Text>
-        <Text style={styles.postDescription}>{item.description}</Text>
+  const renderPost = ({ item, index }) => (
+    <Animatable.View
+      animation="fadeInUp"
+      delay={index * 150}
+      duration={600}
+      useNativeDriver
+    >
+      <View style={styles.postCard}>
+        <Image source={{ uri: item.image }} style={styles.postImage} />
+        <View style={styles.postContent}>
+          <Text style={styles.postTitle}>{item.name}</Text>
+          <Text style={styles.postDescription}>{item.description}</Text>
+        </View>
       </View>
-    </View>
+    </Animatable.View>
   );
 
   return (
@@ -53,26 +61,28 @@ const ProfileScreen = ({ navigation }) => {
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <View style={styles.card}>
-          <Image source={{ uri: profile.avatar }} style={styles.avatar} />
-          <Text style={styles.name}>{profile.name}</Text>
-          <Text style={styles.email}>{profile.email}</Text>
+        <Animatable.View animation="fadeInDown" duration={800} useNativeDriver>
+          <View style={styles.card}>
+            <Image source={{ uri: profile.avatar }} style={styles.avatar} />
+            <Text style={styles.name}>{profile.name}</Text>
+            <Text style={styles.email}>{profile.email}</Text>
 
-          <View style={styles.infoSection}>
-            <Text style={styles.label}>No. Telepon</Text>
-            <Text style={styles.value}>{profile.phone}</Text>
+            <View style={styles.infoSection}>
+              <Text style={styles.label}>No. Telepon</Text>
+              <Text style={styles.value}>{profile.phone}</Text>
 
-            <Text style={styles.label}>Lokasi</Text>
-            <Text style={styles.value}>{profile.location}</Text>
+              <Text style={styles.label}>Lokasi</Text>
+              <Text style={styles.value}>{profile.location}</Text>
 
-            <Text style={styles.label}>Tentang Saya</Text>
-            <Text style={styles.value}>{profile.bio}</Text>
+              <Text style={styles.label}>Tentang Saya</Text>
+              <Text style={styles.value}>{profile.bio}</Text>
+            </View>
+
+            <TouchableOpacity style={styles.editButton}>
+              <Text style={styles.editButtonText}>Edit Profil</Text>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editButtonText}>Edit Profil</Text>
-          </TouchableOpacity>
-        </View>
+        </Animatable.View>
 
         <Text style={styles.sectionTitle}>Postingan Saya</Text>
         <FlatList
@@ -120,7 +130,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 80, // Supaya konten tidak tertutup navbar bawah
+    paddingBottom: 80,
   },
   card: {
     backgroundColor: colors.white,

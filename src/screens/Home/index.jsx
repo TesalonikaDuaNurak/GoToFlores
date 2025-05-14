@@ -8,27 +8,50 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
+import * as Animatable from 'react-native-animatable';
 import { colors, fontType } from '../../theme';
 import { destinations } from '../../constants/data';
 
 const HomeScreen = ({ navigation }) => {
-  const renderDestinationItem = ({ item }) => (
-    <TouchableOpacity
-      onPress={() => navigation.navigate('DetailScreen', { placeId: item.id })}
-      style={styles.card}
+  const renderDestinationItem = ({ item, index }) => (
+    <Animatable.View
+      animation="fadeInUp"
+      delay={index * 150}
+      duration={700}
+      easing="ease-out"
+      useNativeDriver
     >
-      <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
-      <Text style={styles.title}>{item.name}</Text>
-      <Text style={styles.description}>{item.description}</Text>
-    </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('DetailScreen', { placeId: item.id })}
+        style={styles.card}
+        activeOpacity={0.8}
+      >
+        <Animatable.Image
+          animation="zoomIn"
+          delay={index * 150 + 100}
+          duration={700}
+          source={{ uri: item.image }}
+          style={styles.image}
+          resizeMode="cover"
+        />
+        <Text style={styles.title}>{item.name}</Text>
+        <Text style={styles.description}>{item.description}</Text>
+      </TouchableOpacity>
+    </Animatable.View>
   );
 
   return (
     <>
       {/* Navbar Atas */}
-      <View style={styles.navbar}>
+      <Animatable.View
+        animation="fadeInDown"
+        duration={800}
+        delay={100}
+        style={styles.navbar}
+        useNativeDriver
+      >
         <Text style={styles.navTitle}>Beranda</Text>
-      </View>
+      </Animatable.View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <FlatList
@@ -41,7 +64,13 @@ const HomeScreen = ({ navigation }) => {
       </ScrollView>
 
       {/* Navbar Bawah */}
-      <View style={styles.bottomNavbar}>
+      <Animatable.View
+        animation="fadeInUp"
+        delay={400}
+        duration={800}
+        style={styles.bottomNavbar}
+        useNativeDriver
+      >
         <TouchableOpacity style={[styles.navItem, styles.active]}>
           <Text style={styles.navItemText}>Home</Text>
         </TouchableOpacity>
@@ -54,7 +83,7 @@ const HomeScreen = ({ navigation }) => {
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('festival')}>
           <Text style={styles.navItemText}>Event</Text>
         </TouchableOpacity>
-      </View>
+      </Animatable.View>
     </>
   );
 };
@@ -79,7 +108,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 80, // Supaya konten tidak ketutup navbar
+    paddingBottom: 80,
   },
   listContainer: {
     gap: 16,
