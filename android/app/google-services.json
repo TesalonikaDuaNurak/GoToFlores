@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "645116011262",
+    "project_id": "gotoflores-38cb3",
+    "storage_bucket": "gotoflores-38cb3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:645116011262:android:8636ffc000f2d61cd5bbaf",
+        "android_client_info": {
+          "package_name": "com.gotoflores"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnCu_L7CP-uO_I1wwm-G1BDhD8rmwWYVg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

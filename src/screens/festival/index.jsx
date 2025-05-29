@@ -1,82 +1,170 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   FlatList,
   StyleSheet,
-  Image,
-  TouchableOpacity,
-  SafeAreaView,
   TextInput,
+  TouchableOpacity,
   Alert,
+  SafeAreaView,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
-import { colors, fontType } from '../../theme'; // Pastikan path-nya sesuai
+import { colors, fontType } from '../../theme';
+import firestore from '@react-native-firebase/firestore';
+import ImagePicker from 'react-native-image-crop-picker';
 
-const EventsScreen = ({ navigation }) => {
-  const [events, setEvents] = useState([
-    {
-      id: '1',
-      title: 'Festival Komodo',
-      date: '12 Juli 2025',
-      location: 'Labuan Bajo',
-      image: 'https://jadesta.com/imgpost/106156.jpg',
-      description: 'Festival budaya dan parade di pintu gerbang Taman Nasional Komodo.',
-    },
-    {
-      id: '2',
-      title: 'Semana Santa',
-      date: '17 April 2025',
-      location: 'Larantuka',
-      image: 'https://assets.pikiran-rakyat.com/crop/0x0:0x0/238x142/webp/photo/2025/04/11/2091475535.jpg',
-      description: 'Perayaan keagamaan dan prosesi jalan salib yang khidmat.',
-    },
-    {
-      id: '3',
-      title: 'Festival Budaya Nagekeo',
-      date: '5 Agustus 2025',
-      location: 'Mbay, Nagekeo',
-      image: 'https://pariwisata.nagekeokab.go.id/wp-content/uploads/2024/06/Etu-2.jpeg',
-      description: 'Pameran budaya dan seni khas daerah Nagekeo.',
-    },
-  ]);
-
+const EventsScreen = () => {
+  const [events, setEvents] = useState([]);
   const [title, setTitle] = useState('');
-  const [date, setDate] = useState('');
-  const [location, setLocation] = useState('');
-  const [image, setImage] = useState('');
   const [description, setDescription] = useState('');
+  const [image, setImage] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleAddEvent = () => {
-    if (!title || !date || !location || !image || !description) {
-      Alert.alert('Gagal', 'Semua field harus diisi');
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      const snapshot = await firestore()
+        .collection('events')
+        .orderBy('createdAt', 'desc')
+        .get();
+
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setEvents(data);
+    } catch (error) {
+      Alert.alert('Error', 'Gagal mengambil data dari Firestore');
+    }
+  };
+
+  const handleImagePick = async () => {
+    ImagePicker.openPicker({
+      width: 1920,
+      height: 1080,
+      cropping: true,
+    })
+      .then(image => {
+        setImage(image.path);
+      })
+      .catch(error => {
+        console.log(error);
+      });
+  };
+
+  const handleAddOrUpdateEvent = async () => {
+    if (!title || !description) {
+      Alert.alert('Gagal', 'Judul dan Deskripsi harus diisi');
       return;
     }
 
-    const newEvent = {
-      id: Date.now().toString(),
-      title,
-      date,
-      location,
-      image,
-      description,
-    };
+    setLoading(true);
+    let imageUrl = null;
 
-    setEvents([newEvent, ...events]);
+    try {
+      if (image) {
+        const filename = image.substring(image.lastIndexOf('/') + 1);
+        const extension = filename.split('.').pop();
+        const name = filename.split('.').slice(0, -1).join('.');
+        const newFilename = name + Date.now() + '.' + extension;
 
-    setTitle('');
-    setDate('');
-    setLocation('');
-    setImage('');
-    setDescription('');
-    Alert.alert('Sukses', 'Festival berhasil ditambahkan');
+        const formData = new FormData();
+        formData.append('file', {
+          uri: image,
+          type: `image/${extension}`,
+          name: newFilename,
+        });
+
+        const response = await fetch('https://backend-file-praktikum.vercel.app/upload/', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.status !== 200) {
+          throw new Error('Upload gagal');
+        }
+
+        const result = await response.json();
+        imageUrl = result.url;
+      }
+
+      if (editingId) {
+        await firestore().collection('events').doc(editingId).update({
+          title,
+          description,
+          ...(imageUrl && { image: imageUrl }),
+        });
+        Alert.alert('Sukses', 'Event berhasil diupdate');
+      } else {
+        await firestore().collection('events').add({
+          title,
+          description,
+          image: imageUrl,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+        });
+        Alert.alert('Sukses', 'Event berhasil ditambahkan');
+      }
+
+      setTitle('');
+      setDescription('');
+      setImage(null);
+      setEditingId(null);
+      fetchEvents();
+    } catch (error) {
+      console.log(error);
+      Alert.alert('Error', 'Gagal menyimpan data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (event) => {
+    setTitle(event.title);
+    setDescription(event.description);
+    setImage(event.image || null);
+    setEditingId(event.id);
+  };
+
+  const handleDelete = (id) => {
+    Alert.alert('Konfirmasi', 'Yakin ingin menghapus event ini?', [
+      { text: 'Batal', style: 'cancel' },
+      {
+        text: 'Hapus',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await firestore().collection('blog').doc(id).delete();
+            fetchEvents();
+            Alert.alert('Sukses', 'Event berhasil dihapus');
+          } catch (error) {
+            Alert.alert('Error', 'Gagal menghapus event');
+          }
+        },
+      },
+    ]);
   };
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-      <Image source={{ uri: item.image }} style={styles.image} />
+      {item.image && (
+        <Image source={{ uri: item.image }} style={styles.image} />
+      )}
       <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.meta}>{item.date} - {item.location}</Text>
       <Text style={styles.description}>{item.description}</Text>
+      <View style={styles.actions}>
+        <TouchableOpacity style={[styles.actionButton, styles.editButton]} onPress={() => handleEdit(item)}>
+          <Text style={styles.actionText}>Edit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.actionButton, styles.deleteButton]} onPress={() => handleDelete(item.id)}>
+          <Text style={styles.actionText}>Hapus</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -90,47 +178,22 @@ const EventsScreen = ({ navigation }) => {
         <FlatList
           ListHeaderComponent={
             <View style={styles.form}>
-              <Text style={styles.formTitle}>Tambah Festival Baru</Text>
+              <Text style={styles.formTitle}>
+                {editingId ? 'Edit Event' : 'Tambah Event'}
+              </Text>
 
-              <Text style={styles.label}>Nama Festival</Text>
+              <Text style={styles.label}>Judul</Text>
               <TextInput
-                placeholder="Nama Festival"
+                placeholder="Masukkan judul"
                 placeholderTextColor="#999"
                 value={title}
                 onChangeText={setTitle}
                 style={styles.input}
               />
 
-              <Text style={styles.label}>Tanggal</Text>
-              <TextInput
-                placeholder="Contoh: 10 Mei 2025"
-                placeholderTextColor="#999"
-                value={date}
-                onChangeText={setDate}
-                style={styles.input}
-              />
-
-              <Text style={styles.label}>Lokasi</Text>
-              <TextInput
-                placeholder="Lokasi"
-                placeholderTextColor="#999"
-                value={location}
-                onChangeText={setLocation}
-                style={styles.input}
-              />
-
-              <Text style={styles.label}>URL Gambar</Text>
-              <TextInput
-                placeholder="URL Gambar"
-                placeholderTextColor="#999"
-                value={image}
-                onChangeText={setImage}
-                style={styles.input}
-              />
-
               <Text style={styles.label}>Deskripsi</Text>
               <TextInput
-                placeholder="Deskripsi"
+                placeholder="Masukkan deskripsi"
                 placeholderTextColor="#999"
                 value={description}
                 onChangeText={setDescription}
@@ -138,9 +201,27 @@ const EventsScreen = ({ navigation }) => {
                 multiline
               />
 
-              <TouchableOpacity style={styles.button} onPress={handleAddEvent}>
-                <Text style={styles.buttonText}>Tambah Festival</Text>
+              <TouchableOpacity
+                style={[styles.button, { marginBottom: 8 }]}
+                onPress={handleImagePick}
+              >
+                <Text style={styles.buttonText}>
+                  {image ? 'Ganti Gambar' : 'Pilih Gambar'}
+                </Text>
               </TouchableOpacity>
+
+              {loading ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={handleAddOrUpdateEvent}
+                >
+                  <Text style={styles.buttonText}>
+                    {editingId ? 'Simpan Perubahan' : 'Tambah'}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           }
           data={events}
@@ -150,21 +231,6 @@ const EventsScreen = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         />
       </SafeAreaView>
-
-      <View style={styles.bottomNavbar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
-          <Text style={styles.navItemText}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Discover')}>
-          <Text style={styles.navItemText}>Discover</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-          <Text style={styles.navItemText}>Profile</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.navItem, styles.active]}>
-          <Text style={styles.navItemText}>Event</Text>
-        </TouchableOpacity>
-      </View>
     </>
   );
 };
@@ -226,7 +292,6 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 6,
   },
   buttonText: {
     color: colors.white,
@@ -237,52 +302,47 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: 12,
     marginBottom: 20,
-    overflow: 'hidden',
+    padding: 16,
     elevation: 4,
-  },
-  image: {
-    width: '100%',
-    height: 180,
   },
   title: {
     fontFamily: fontType.bold,
     fontSize: 18,
     color: colors.primary,
-    padding: 10,
-  },
-  meta: {
-    fontFamily: fontType.medium,
-    fontSize: 14,
-    color: colors.secondary,
-    paddingHorizontal: 10,
+    marginBottom: 6,
   },
   description: {
     fontFamily: fontType.regular,
     fontSize: 14,
     color: colors.secondary,
-    padding: 10,
-    paddingTop: 4,
   },
-  bottomNavbar: {
+  actions: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 10,
-    backgroundColor: colors.white,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+    justifyContent: 'flex-end',
+    marginTop: 12,
   },
-  navItem: {
-    padding: 10,
+  actionButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginLeft: 10,
   },
-  navItemText: {
-    fontFamily: fontType.bold,
+  editButton: {
+    backgroundColor: colors.primary,
+  },
+  deleteButton: {
+    backgroundColor: '#ff4d4d',
+  },
+  actionText: {
+    color: 'white',
+    fontFamily: fontType.medium,
     fontSize: 14,
-    color: colors.primary,
   },
-  active: {
-    borderBottomWidth: 2,
-    borderBottomColor: colors.primary,
+  image: {
+    width: '100%',
+    height: 180,
+    borderRadius: 10,
+    marginBottom: 12,
   },
 });
 
